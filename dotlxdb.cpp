@@ -9,6 +9,7 @@
 #include <vector>
 #include <bits/stdc++.h>
 #include <nlohmann/json.hpp>
+#include <print>
 
 using json = nlohmann::json;
 
@@ -29,10 +30,83 @@ public:
         std::string value;
     };
 
+    typedef std::map<std::string, std::string> Row;
+
     std::vector<ValuePair> Columns;
     std::vector<std::map<int, std::vector<ValuePair>>> Table;
 
     DB() = default;
+
+    DB CreateDb(const char* filepath)
+    {
+        DB db;
+
+        std::ifstream input{filepath};
+        if (!input.is_open()) {
+            return db;
+        }
+
+        std::vector<std::string> lines;
+        for (std::string line; std::getline(input, line);) lines.push_back(std::move(line));
+        for (auto& line : lines) lexer(line, db);
+
+        return db;
+    }
+
+    bool UpdateDB(int index, DB::Row& row) {
+        if (index >= Table.size()) return false;
+
+        Table[index].clear();
+
+        std::vector<ValuePair> newVector;
+        for (const auto& [k, v] : row) {
+            newVector.push_back({k, v});
+        }
+
+        Table[index].insert({ index, newVector});
+
+        return true;
+    }
+
+
+    bool SaveToFile(const char* filepath, int rowId, const DB::Row& newRow) {
+        std::ifstream input(filepath);
+        if (!input.is_open()) return false;
+
+        std::vector<std::string> lines;
+        for (std::string line; std::getline(input, line);)
+            lines.push_back(line);
+        input.close();
+
+        if (rowId <= 0 || rowId > (int)lines.size()) return false;
+
+        std::string newLine = std::to_string(rowId) + " => { ";
+        size_t i = 0;
+        for (const auto& [k, v] : newRow) {
+            newLine += k + " \"" + v + "\"";
+            if (i + 1 < newRow.size()) newLine += "; ";
+            i++;
+        }
+        newLine += " }";
+
+        lines[rowId - 1] = newLine;
+
+        std::ofstream output(filepath, std::ios::trunc);
+        if (!output.is_open()) return false;
+        for (const auto& l : lines) output << l << "\n";
+
+        return true;
+    }
+
+    std::vector<ValuePair>* GetRowById(int id) {
+        for (auto& rowMap : Table) {
+            auto it = rowMap.find(id);
+            if (it != rowMap.end()) {
+                return &(it->second);
+            }
+        }
+        return nullptr;
+    }
 
     void AddData(int index, ValuePair& column) {
         if (index >= Table.size()) {
@@ -71,11 +145,6 @@ public:
     }
 };
 
-DB db;
-
-int Index = 1;
-int Indexes = 0;
-
 std::vector<std::string> splitString(const std::string &str, const char delimiter) {
     std::vector<std::string> tokens;
     std::stringstream ss(str);
@@ -90,7 +159,7 @@ std::vector<std::string> splitString(const std::string &str, const char delimite
 }
 
 void lexer(std::string& line, DB& db) {
-    static int column_id = -1;
+    int column_id = -1;
     std::string scolumn_id = "";
 
     int i = 0;
@@ -102,7 +171,6 @@ void lexer(std::string& line, DB& db) {
     }
     i++;
     column_id = std::stoi(scolumn_id);
-    Indexes++;
     if(line[i] == '=' && line[i+1] == '>')
         i = i+5;
 
@@ -153,51 +221,31 @@ void lexer(std::string& line, DB& db) {
 
 char* ReadDB(const char* filepath)
 {
-    DB ExternDb;
-
-    std::ifstream input{filepath};
-    if (!input.is_open()) {
-        return _strdup("{}");
-    }
-
-    std::vector<std::string> lines;
-    for (std::string line; std::getline(input, line);) lines.push_back(std::move(line));
-    for (auto& line : lines) lexer(line, ExternDb);
+    DB ExternDb = DB().CreateDb(filepath);
 
     std::string jsonStr = ExternDb.TableToJson().dump(2);
     return _strdup(jsonStr.c_str());
 }
 
+bool UpdateDB(const char* filepath, int index, const char** keys, const char** values, int count) {
+    printf("UpdateDB called with filepath: %s, index: %d, count: %d\n", filepath, index, count);
+    std::map<std::string, std::string> newRow;
+    for (int i = 0; i < count; ++i) {
+        newRow[keys[i]] = values[i];
+    }
+
+    DB ExternDB = DB().CreateDb(filepath);
+
+    if (ExternDB.UpdateDB(index, newRow) && ExternDB.SaveToFile(filepath, index, newRow)) {
+        return true;
+    }
+    return false;
+}
+
+
 void FreeString(char* ptr)
 {
     free(ptr);
-}
-
-DB InternalReadDB(std::string& filepath) {
-    DB ExternDb;
-    std::vector<std::string> file;
-    std::ifstream input{filepath};
-    if (!input.is_open()) {
-        printf("Could not read file");
-        return ExternDb;
-    }
-    for(std::string line; std::getline(input, line);){
-        file.push_back(std::move(line));
-    }
-    for( std::string& line : file){
-        lexer(line, ExternDb);
-    }
-    return ExternDb;
-}
-
-DB WriteDB(std::string filepath) {
-    DB ExternDB;
-    return ExternDB;
-}
-
-DB UpdateDB(std::string filepath) {
-    DB ExternDB;
-    return ExternDB;
 }
 
 int main(int argc, char* argv[]) {
@@ -209,8 +257,17 @@ int main(int argc, char* argv[]) {
         filepath = argv[1];
     }
 
-    db = InternalReadDB(filepath);
-    printf("File parsed. Found %i indexes\n", Indexes);
+    DB db = DB().CreateDb(filepath.c_str());
+    DB::Row x = {
+        {"name", "Lil"},
+        { "last_name", "Uzi"}
+    };
+    if (db.UpdateDB(3, x) && db.SaveToFile(filepath.c_str(), 3, x)) {
+        printf("Successfully updated.\n");
+    }
+    else
+        printf("Failed to update DB.\n");
+    printf("File parsed.\n");
     db.PrintTable();
     return 0;
 }

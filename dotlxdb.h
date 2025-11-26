@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,8 @@ std::vector<std::string> splitString(const std::string &str, const char delimite
 void lexer(std::string& line, DB& db);
 
 API char* ReadDB(const char* filepath);
+
+API bool UpdateDB(const char* filepath, int index, const char** keys, const char** values, int count);
 
 API void FreeString(char* ptr);
 

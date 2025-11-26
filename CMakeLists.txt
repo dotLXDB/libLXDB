@@ -1,16 +1,12 @@
-cmake_minimum_required(VERSION 4.0)
-project(dotLXDB)
+cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_CXX_STANDARD 23)
+project(dotLXDB)
 
 add_library(dotLXDB SHARED
         dotlxdb.cpp
         dotlxdb.h
 )
-
-add_executable(dotlxdbapp
-        dotlxdb.cpp
+add_executable(dotLXDBapp
         dotlxdb.h
+        dotlxdb.cpp
 )
-
-link_libraries(dotlxdbapp PRIVATE dotLXDB)
