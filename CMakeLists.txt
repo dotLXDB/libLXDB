@@ -12,7 +12,8 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(json)
 
-target_include_directories(your_target PRIVATE /home/github/actions/_work/libLXDB/libLXDB/build/_deps/json-src/include/)
+target_include_directories(dotLXDB PRIVATE /home/github/actions/_work/libLXDB/libLXDB/build/_deps/json-src/include/)
+target_include_directories(dotLXDBapp PRIVATE /home/github/actions/_work/libLXDB/libLXDB/build/_deps/json-src/include/)
 
 add_library(dotLXDB SHARED
         src/dotlxdb.cpp
