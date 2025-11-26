@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.10)
 
 project(dotLXDB)
 
+set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 include(FetchContent)
 
 FetchContent_Declare(
