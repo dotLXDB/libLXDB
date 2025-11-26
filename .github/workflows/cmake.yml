@@ -1,0 +1,65 @@
+name: Build and Release on Self-Hosted Linux
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set build directory
+        id: set-build-dir
+        shell: bash
+        run: |
+          echo "build_dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Configure CMake
+        run: |
+          cmake -B ${{ steps.set-build-dir.outputs.build_dir }} -DCMAKE_BUILD_TYPE=Release -S ${{ github.workspace }}
+
+      - name: Build
+        run: |
+          cmake --build ${{ steps.set-build-dir.outputs.build_dir }} --config Release
+
+      - name: Run tests (if any)
+        working-directory: ${{ steps.set-build-dir.outputs.build_dir }}
+        run: |
+          ctest --build-config Release
+
+      - name: Zip build output
+        run: |
+          cd ${{ steps.set-build-dir.outputs.build_dir }}
+          zip -r ${{ github.workspace }}/build.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-zip
+          path: ${{ github.workspace }}/build.zip
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly
+          release_name: Nightly release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/build.zip
+          asset_name: build.zip
+          asset_content_type: application/zip
