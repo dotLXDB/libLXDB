@@ -10,17 +10,15 @@
 #include <bits/stdc++.h>
 #include <nlohmann/json.hpp>
 #include <print>
+#include "exceptions.h"
 
 using json = nlohmann::json;
 
-class unableToParseChar: public std::exception {
-    char ch;
-    std::string msg;
-public:
-    explicit unableToParseChar(char c) : ch(c), msg("Unable to parse given character: " + std::string(1, c)) {}
-    const char* what() const noexcept override {
-        return msg.c_str();
-    }
+class COLORS {
+    public:
+        static void eprint(std::string str) {
+            std::cerr << "\033[0;31m" << str << "\033[0m" << std::endl;
+        }
 };
 
 class DB {
@@ -40,62 +38,66 @@ public:
     DB CreateDb(const char* filepath)
     {
         DB db;
+        std::ifstream input;
 
-        std::ifstream input{filepath};
-        if (!input.is_open()) {
-            return db;
+        try {
+            input.open(filepath);
+            if (!input.is_open()) {
+                throw unableToAccessFile(filepath);
+            }
+            std::vector<std::string> lines;
+            for (std::string line; std::getline(input, line);) {
+                lines.push_back(std::move(line));
+            }
+            for (auto& line : lines) {
+                lexer(line, db);
+            }
         }
-
-        std::vector<std::string> lines;
-        for (std::string line; std::getline(input, line);) lines.push_back(std::move(line));
-        for (auto& line : lines) lexer(line, db);
-
+        catch (const std::exception& e) {
+            COLORS::eprint(e.what());
+        }
         return db;
     }
 
     bool UpdateDB(int index, DB::Row& row) {
         if (index >= Table.size()) return false;
-
         Table[index].clear();
-
         std::vector<ValuePair> newVector;
         for (const auto& [k, v] : row) {
             newVector.push_back({k, v});
         }
-
         Table[index].insert({ index, newVector});
-
         return true;
     }
 
 
     bool SaveToFile(const char* filepath, int rowId, const DB::Row& newRow) {
-        std::ifstream input(filepath);
-        if (!input.is_open()) return false;
-
-        std::vector<std::string> lines;
-        for (std::string line; std::getline(input, line);)
-            lines.push_back(line);
-        input.close();
-
-        if (rowId <= 0 || rowId > (int)lines.size()) return false;
-
-        std::string newLine = std::to_string(rowId) + " => { ";
-        size_t i = 0;
-        for (const auto& [k, v] : newRow) {
-            newLine += k + " \"" + v + "\"";
-            if (i + 1 < newRow.size()) newLine += "; ";
-            i++;
+        try {
+            std::ifstream input(filepath);
+            if (!input.is_open()){
+            throw unableToAccessFile(filepath);
+            };
+            std::vector<std::string> lines;
+            for (std::string line; std::getline(input, line);)
+                lines.push_back(line);
+            input.close();
+            if (rowId <= 0 || rowId > (int)lines.size()) return false;
+            std::string newLine = std::to_string(rowId) + " => { ";
+            size_t i = 0;
+            for (const auto& [k, v] : newRow) {
+                newLine += k + " \"" + v + "\"";
+                if (i + 1 < newRow.size()) newLine += "; ";
+                i++;
+            }
+            newLine += " }";
+            lines[rowId - 1] = newLine;
+            std::ofstream output(filepath, std::ios::trunc);
+            if (!output.is_open()) return false;
+            for (const auto& l : lines) output << l << "\n";
+            return true;
+        }catch (const std::exception& e) {
+            COLORS::eprint(e.what());
         }
-        newLine += " }";
-
-        lines[rowId - 1] = newLine;
-
-        std::ofstream output(filepath, std::ios::trunc);
-        if (!output.is_open()) return false;
-        for (const auto& l : lines) output << l << "\n";
-
-        return true;
     }
 
     std::vector<ValuePair>* GetRowById(int id) {
@@ -128,7 +130,6 @@ public:
     }
     json TableToJson() {
         json table = json::array();
-
         for (const auto& rowMap : Table) {
             json rowJson = json::object();
             for (const auto& [key, vec] : rowMap) {
@@ -140,7 +141,6 @@ public:
             }
             table.push_back(rowJson);
         }
-
         return table;
     }
 };
@@ -247,6 +247,9 @@ void FreeString(char* ptr)
 {
     free(ptr);
 }
+
+
+//Used only for testing internally before using in C# wrapper tests
 
 int main(int argc, char* argv[]) {
     std::string filepath;
