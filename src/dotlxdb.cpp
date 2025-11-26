@@ -224,7 +224,7 @@ char* ReadDB(const char* filepath)
     DB ExternDb = DB().CreateDb(filepath);
 
     std::string jsonStr = ExternDb.TableToJson().dump(2);
-    return _strdup(jsonStr.c_str());
+    return strdup(jsonStr.c_str());
 }
 
 bool UpdateDB(const char* filepath, int index, const char** keys, const char** values, int count) {

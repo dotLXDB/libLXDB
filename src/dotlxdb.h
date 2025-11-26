@@ -4,9 +4,9 @@
 #include <vector>
 
 #ifdef LXDB_EXPORT
-#define API extern "C" __declspec(dllexport)
+#define API extern "C"
 #else
-#define API extern "C" __declspec(dllimport)
+#define API extern "C"
 #endif
 
 #ifndef DOTLXDB_LXDB_H
