@@ -38,7 +38,7 @@ jobs:
           zip -r ${{ github.workspace }}/build.zip .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-zip
           path: ${{ github.workspace }}/build.zip
