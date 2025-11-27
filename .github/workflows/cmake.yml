@@ -32,9 +32,10 @@ jobs:
         run: |
           cmake -B linux -DCMAKE_BUILD_TYPE=Release -S .
           cmake -B win32 -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=win64-toolchain.cmake \
-          -CMAKE_FIND_ROOT_PATH /opt/mingw64 \
-          -S .
+            -DCMAKE_TOOLCHAIN_FILE=win64-toolchain.cmake \
+            -DCMAKE_FIND_ROOT_PATH=/opt/mingw64 \
+            -S .
+
 
       - name: Build Linux x86
         run: cmake --build linux --config Release
