@@ -32,8 +32,9 @@ jobs:
         run: |
           cmake -B linux -DCMAKE_BUILD_TYPE=Release -S .
           cmake -B win32 -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-            -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ -S .
+          -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+          -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+          -S .
 
       - name: Build Linux x86
         run: cmake --build linux --config Release
