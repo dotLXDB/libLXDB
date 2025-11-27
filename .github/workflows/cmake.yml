@@ -1,5 +1,8 @@
 name: Build and Release on Self-Hosted Linux
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: ["main"]
@@ -28,7 +31,7 @@ jobs:
       - name: Configure CMake
         run: |
           cmake -B linux -DCMAKE_BUILD_TYPE=Release -S .
-          cmake -B win32 -DCMAKE_BUILD_TYPE=Release -S .
+          cmake -B win32 -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ -S .
 
       - name: Build Linux x86
         run: cmake --build linux --config Release
@@ -40,8 +43,8 @@ jobs:
       - name: Zip build output
         run: |
           mkdir -p builds
-          zip -r builds/linux-x86.zip linux
-          zip -r builds/win-x86.zip win32
+          zip -r builds/linux-x86.zip linux/*
+          zip -r builds/win-x86.zip win32/*
 
       # --- Upload CI artifacts ---
       - name: Upload build artifacts
@@ -50,35 +53,33 @@ jobs:
           name: nightly-builds
           path: builds/*
 
-      # --- Create new nightly release ---
-      - name: Create nightly release
-        uses: actions/create-release@v1
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: nightly
-          release_name: Nightly Build
-          draft: false
-          prerelease: true
+      - name: Create Release
+  id: create_release
+  uses: actions/create-release@v1
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    tag_name: nightly
+    release_name: Nightly Build
+    draft: false
+    prerelease: true
 
-      # --- Upload assets ---
-      - name: Upload Linux asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: builds/linux-x86.zip
-          asset_name: linux-x86.zip
-          asset_content_type: application/zip
+- name: Upload Linux Release Asset
+  uses: actions/upload-release-asset@v1
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    upload_url: ${{ steps.create_release.outputs.upload_url }}
+    asset_path: ${{ github.workspace }}/builds/linux-x86.zip
+    asset_name: linux-x86.zip
+    asset_content_type: application/zip
 
-      - name: Upload Windows asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: builds/win-x86.zip
-          asset_name: win-x86.zip
-          asset_content_type: application/zip
+- name: Upload Windows Release Asset
+  uses: actions/upload-release-asset@v1
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    upload_url: ${{ steps.create_release.outputs.upload_url }}
+    asset_path: ${{ github.workspace }}/builds/win-x86.zip
+    asset_name: win-x86.zip
+    asset_content_type: application/zip
