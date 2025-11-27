@@ -3,8 +3,9 @@ set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
 set(TOOLCHAIN_PREFIX x86_64-w64-mingw32)
 
-set(CMAKE_C_COMPILER   /opt/mingw64/bin/${TOOLCHAIN_PREFIX}-gcc.exe)
+set(CMAKE_C_COMPILER /opt/mingw64/bin/${TOOLCHAIN_PREFIX}-gcc.exe)
 set(CMAKE_CXX_COMPILER /opt/mingw64/bin/${TOOLCHAIN_PREFIX}-g++.exe)
+set(CMAKE_C_COMPILER_LAUNCHER wine)
 
 set(CMAKE_RC_COMPILER  /opt/mingw64/bin/${TOOLCHAIN_PREFIX}-windres.exe)
 
