@@ -7,7 +7,6 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <bits/stdc++.h>
 #include <nlohmann/json.hpp>
 #include <print>
 #include "exceptions.h"
