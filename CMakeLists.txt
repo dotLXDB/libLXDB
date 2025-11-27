@@ -25,3 +25,6 @@ add_executable(dotLXDBapp
         src/dotlxdb.cpp
         src/exceptions.h
 )
+
+target_link_libraries(dotLXDB PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(dotLXDBapp PRIVATE nlohmann_json::nlohmann_json)
