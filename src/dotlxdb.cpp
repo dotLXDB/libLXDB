@@ -11,6 +11,10 @@
 #include <nlohmann/json.hpp>
 #include <print>
 #include "exceptions.h"
+#include <sstream>
+#include <algorithm>
+#include <cstring>
+#include <cstdlib>
 
 using json = nlohmann::json;
 
