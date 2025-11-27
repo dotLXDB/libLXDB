@@ -11,7 +11,7 @@ public:
     explicit unableToAccessFile(const std::string& filepath)
         : filepath(filepath), msg("Unable to access file: " + filepath) {}
 
-    const char* what() const noexcept override {
+    [[nodiscard]] const char* what() const noexcept override {
         return msg.c_str();
     }
 };

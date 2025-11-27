@@ -20,11 +20,5 @@ add_library(dotLXDB SHARED
         src/dotlxdb.h
         src/exceptions.h
 )
-add_executable(dotLXDBapp
-        src/dotlxdb.h
-        src/dotlxdb.cpp
-        src/exceptions.h
-)
 
 target_link_libraries(dotLXDB PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(dotLXDBapp PRIVATE nlohmann_json::nlohmann_json)
