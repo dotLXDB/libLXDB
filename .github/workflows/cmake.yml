@@ -2,9 +2,7 @@ name: Build and Release on Self-Hosted Linux
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
@@ -13,53 +11,74 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set build directory
-        id: set-build-dir
-        shell: bash
+      # --- Delete old nightly release and tag ---
+      - name: Delete previous nightly release
         run: |
-          echo "build_dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          gh release delete nightly -y || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Delete previous nightly tag
+        run: |
+          git push origin :refs/tags/nightly || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- Configure builds ---
       - name: Configure CMake
         run: |
-          cmake -B ${{ steps.set-build-dir.outputs.build_dir }} -DCMAKE_BUILD_TYPE=Release -S ${{ github.workspace }}
+          cmake -B linux -DCMAKE_BUILD_TYPE=Release -S .
+          cmake -B win32 -DCMAKE_BUILD_TYPE=Release -S .
 
-      - name: Build
-        run: |
-          cmake --build ${{ steps.set-build-dir.outputs.build_dir }} --config Release
+      - name: Build Linux x86
+        run: cmake --build linux --config Release
 
-      - name: Run tests (if any)
-        working-directory: ${{ steps.set-build-dir.outputs.build_dir }}
-        run: |
-          ctest --build-config Release
+      - name: Build Win x86
+        run: cmake --build win32 --config Release
 
+      # --- Package ---
       - name: Zip build output
         run: |
-          cd ${{ steps.set-build-dir.outputs.build_dir }}
-          zip -r ${{ github.workspace }}/build.zip .
+          mkdir -p builds
+          zip -r builds/linux-x86.zip linux
+          zip -r builds/win-x86.zip win32
 
-      - name: Upload artifact
+      # --- Upload CI artifacts ---
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-zip
-          path: ${{ github.workspace }}/build.zip
+          name: nightly-builds
+          path: builds/*
 
-      - name: Create Release
-        id: create_release
+      # --- Create new nightly release ---
+      - name: Create nightly release
         uses: actions/create-release@v1
+        id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: nightly
-          release_name: Nightly release v${{ github.run_number }}
+          release_name: Nightly Build
           draft: false
-          prerelease: false
+          prerelease: true
 
-      - name: Upload Release Asset
+      # --- Upload assets ---
+      - name: Upload Linux asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/build.zip
-          asset_name: build.zip
+          asset_path: builds/linux-x86.zip
+          asset_name: linux-x86.zip
+          asset_content_type: application/zip
+
+      - name: Upload Windows asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: builds/win-x86.zip
+          asset_name: win-x86.zip
           asset_content_type: application/zip
