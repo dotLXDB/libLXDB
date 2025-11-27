@@ -25,6 +25,3 @@ add_executable(dotLXDBapp
         src/dotlxdb.cpp
         src/exceptions.h
 )
-
-target_include_directories(dotLXDB PRIVATE /home/github/actions/_work/libLXDB/libLXDB/build/_deps/json-src/include/)
-target_include_directories(dotLXDBapp PRIVATE /home/github/actions/_work/libLXDB/libLXDB/build/_deps/json-src/include/)
